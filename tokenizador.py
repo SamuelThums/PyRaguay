@@ -6,7 +6,7 @@ tokens = {
     "PALAVRA_CHAVE": r"iph|ueuce|uaile|galantia|tnirp",
     "NUMERO":        r"\d+",
     "IDENTIFICADOR": r"[a-zA-Z][a-zA-Z0-9]*",   # x   soma   valor1
-    "OPERADOR":      r"",   # +  -  *  /  =  ==  <  >
+    "OPERADOR":      r"maisbarato|sumiu|dobradinha|divideai|eisso|pareceigual|menoroumenos|maioroumais",  # +  -  *  /  =  ==  <  >
     "SIMBOLO":       r"[();]",
 }
 
