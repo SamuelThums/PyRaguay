@@ -4,15 +4,15 @@ import re
 # A ordem importa: o primeiro tipo que casar e o escolhido.
 tokens = {
     "PALAVRA_CHAVE": r"iph|ueuce|uaile|galantia|tnirp",
-    "NUMERO":        r"\d+",
-    "IDENTIFICADOR": r"[a-zA-Z][a-zA-Z0-9]*",   # x   soma   valor1
-    "OPERADOR":      r"maisbarato|sumiu|dobradinha|divideai|eisso|pareceigual|menoroumenos|maioroumais",  # +  -  *  /  =  ==  <  >
-    "SIMBOLO":       r"[();]",
+    "NUMERO": r"\d+",
+    "OPERADOR": r"maisbarato|sumiu|dobradinha|divideai|eisso|pareceigual|menoroumenos|maioroumais",  # +  -  *  /  =  ==  <  >
+    "IDENTIFICADOR": r"[a-zA-Z][a-zA-Z0-9]*",  # x   soma   valor1
+    "SIMBOLO": r"[();]", # {, }, (, ), ;
 }
 
 
 def tokenize(codigo):
-    resultado = []          # lista de tokens reconhecidos
+    resultado = []  # lista de tokens reconhecidos
     erros = 0
 
     for palavra in codigo.split():
