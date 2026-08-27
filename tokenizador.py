@@ -7,7 +7,7 @@ tokens = {
     "NUMERO": r"\d+",
     "OPERADOR": r"maisbarato|sumiu|dobradinha|divideai|eisso|pareceigual|menoroumenos|maioroumais",  # +  -  *  /  =  ==  <  >
     "IDENTIFICADOR": r"[a-zA-Z][a-zA-Z0-9]*",  # x   soma   valor1
-    "SIMBOLO": r"[();]", # {, }, (, ), ;
+    "SIMBOLO": r"abreportamala|fechaportamala|aduana", # {, }, (, ), ;
 }
 
 
