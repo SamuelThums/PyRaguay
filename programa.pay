@@ -1,15 +1,40 @@
+\°
+Programa de exemplo para testar uma compra de eletrônico.
+O programa calcula o valor total da compra somando preço + frete
+e verifica se o valor ultrapassa o limite definido.
+°\
+
+\\ Exibe uma mensagem inicial
 tnirp abreportamala comprando eletronico barato fechaportamala aduana
 
+
+\\ Define o preço do produto
 preco eisso 350 aduana
+
+\\ Define o limite usado para verificar a cobrança de imposto
 limite eisso 300 aduana
+
+\\ Define o valor do frete
 frete eisso 15 aduana
 
+
+\\ Calcula o valor total da compra: preço + frete
 total eisso preco maisbarato frete aduana
 
+
+\\ Se o total for maior ou igual ao limite
 iph total maioroumais limite abremochila
+
+    \\ Informa que a compra será taxada
     tnirp abreportamala vai pagar imposto pro fisco fechaportamala aduana
+
 fechamochila
 
+
+\\ Caso contrário
 ueuce abremochila
+
+    \\ Informa que a compra passou sem imposto
     tnirp abreportamala passou liso fechaportamala aduana
+
 fechamochila
