@@ -11,6 +11,12 @@ import re
 # tnirp             -> print
 # receita           -> def
 #
+# contado           -> int    (tipo: dinheiro contado, sem centavos)
+# quebrado          -> float  (tipo: valor quebrado, com centavos)
+# etiqueta          -> string (tipo: o texto escrito na etiqueta)
+# temounao          -> bool   (tipo: "tem ou nao tem?")
+# semtroco          -> void   (tipo: a receita nao devolve nada)
+#
 # original          -> True
 # oliginal          -> False
 #
@@ -36,7 +42,9 @@ import re
 # fechaportamala    -> )
 # abremochila       -> {
 # fechamochila      -> }
-# aduana            -> ,
+# etambem           -> ,      (separa argumentos e parametros: "e tambem leva esse")
+#
+# aduana            -> ;      (pontuacao: termina a instrucao, passou na aduana)
 #
 # "texto" ou 'texto' -> string (aceita aspas simples, duplas e aspas internas)
 #
@@ -53,13 +61,18 @@ ESPECIFICACAO_TOKENS = [
     ("COMENTARIO",           r"\\°.*?°\\|\\\\[^\n]*"),
     ("STRING",                r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\''),
     ("PALAVRA_CHAVE",         r"\b(?:iph|ueuce|uaile|galantia|tnirp|receita)\b"),
+    ("TIPO",                  r"\b(?:contado|quebrado|etiqueta|temounao|semtroco)\b"),
     ("BOOLEANO",              r"\b(?:original|oliginal)\b"),
     ("NUMERO",                r"\d+\.\d+|\d+"),
     ("OPERADOR_ATRIBUICAO",   r"\beisso\b"),
     ("OPERADOR_LOGICO",       r"\b(?:levajunto|ouentao|naotem)\b"),
     ("OPERADOR_CONDICIONAL",  r"\b(?:pareceigual|trocado|menoroumenos|maioroumais|achatou|estourou)\b"),
+    # separa os operadores por conta das ordens na eq
+    #("OPERADOR_ARITMETICO",   r"\b(?:dobradinha|divideai)\b"),
+    #("OPERADOR_ARITMETICO_SUB_ADD",   r"\b(?:maisbarato|sumiu)\b"),
     ("OPERADOR_ARITMETICO",   r"\b(?:maisbarato|sumiu|dobradinha|divideai)\b"),
-    ("SIMBOLO",               r"\b(?:abreportamala|fechaportamala|abremochila|fechamochila|aduana)\b"),
+    ("PONTUACAO",             r"\baduana\b"),
+    ("SIMBOLO",               r"\b(?:abreportamala|fechaportamala|abremochila|fechamochila|etambem)\b"),
     ("IDENTIFICADOR",         r"[a-zA-Z_][a-zA-Z0-9_]*"),
     ("ESPACO",                r"[ \t]+"),
     ("QUEBRA_LINHA",          r"\r\n|\n"),

@@ -1,34 +1,76 @@
 \\ O programa calcula o valor total da compra somando preço + frete
 \\ e verifica se o valor ultrapassa o limite definido.
-receita calcular_total abreportamala preco aduana frete fechaportamala abremochila
+
+receita quebrado calcular_total abreportamala quebrado preco etambem quebrado frete fechaportamala abremochila
     \\ Soma o preço do produto com o frete
-    total eisso preco maisbarato frete aduana
+    quebrado total eisso preco maisbarato frete aduana
     galantia total aduana
-\\ Exibe uma mensagem inicial
 fechamochila
-tnirp abreportamala "comprando eletronico barato" fechaportamala aduana
+
+\\ Anuncia a mercadoria em voz alta e nao devolve nada pra quem chamou
+receita semtroco anunciar abreportamala etiqueta mensagem fechaportamala abremochila
+    tnirp abreportamala mensagem fechaportamala aduana
+fechamochila
+
+\\ Nome que está escrito na etiqueta do produto
+etiqueta produto eisso "eletronico barato" aduana
+
+\\ Exibe uma mensagem inicial
+anunciar abreportamala produto fechaportamala aduana
+
 \\ Define o preço do produto (com centavos, por isso o float)
-preco eisso 350.5 aduana
+quebrado preco eisso 350.5 aduana
+
 \\ Define o limite usado para verificar a cobrança de imposto
-limite eisso 300 aduana
+contado limite eisso 300 aduana
+
 \\ Define o valor do frete
-frete eisso 15 aduana
+contado frete eisso 15 aduana
+
 \\ Calcula o valor total da compra usando a função
-total eisso calcular_total abreportamala preco aduana frete fechaportamala aduana
+quebrado total eisso calcular_total abreportamala preco etambem frete fechaportamala aduana
+
 \\ Guarda se a compra ultrapassou o limite
-ultrapassou eisso total maioroumais limite aduana
+temounao ultrapassou eisso total maioroumais limite aduana
+
+\\ A mercadoria desceu a serra sem nota fiscal
+temounao tem_nota eisso oliginal aduana
+
 \\ Se ultrapassou o limite e o frete nao ficou caro demais, cobra imposto
-iph ultrapassou pareceigual original levajunto frete menoroumenos 20 abremochila
+iph abreportamala ultrapassou pareceigual original levajunto frete menoroumenos 20 fechaportamala abremochila
     tnirp abreportamala 'vai pagar "imposto" pro fisco' fechaportamala aduana
 fechamochila
 ueuce abremochila
     tnirp abreportamala "passou liso" fechaportamala aduana
+fechamochila
+
 \\ Confere se o frete estourou o combinado ou o total ficou diferente do limite
-fechamochila
-iph frete estourou 20 ouentao total trocado limite abremochila
+iph abreportamala frete estourou 20 ouentao total trocado limite fechaportamala abremochila
     tnirp abreportamala "desconfia dessa encomenda" fechaportamala aduana
-\\ Se nao ultrapassou, e porque o preco achatou direitinho
 fechamochila
-iph naotem ultrapassou abremochila
+
+\\ Se nao ultrapassou, e porque o preco achatou direitinho
+iph abreportamala naotem ultrapassou fechaportamala abremochila
     tnirp abreportamala "preco achatou direitinho" fechaportamala aduana
+fechamochila
+
+\\ Sem nota na mao, o fisco cobra o imposto dobrado
+iph abreportamala tem_nota pareceigual oliginal fechaportamala abremochila
+    quebrado imposto eisso total dobradinha 2 aduana
+    anunciar abreportamala "imposto dobrado, sem nota" fechaportamala aduana
+    tnirp abreportamala imposto fechaportamala aduana
+fechamochila
+
+\\ Desconta o frete pra saber quanto custou so a mercadoria
+quebrado mercadoria eisso total sumiu frete aduana
+
+\\ Parcela o que sobrou em tres vezes, no olho
+contado parcelas eisso 3 aduana
+quebrado valor_parcela eisso mercadoria divideai parcelas aduana
+
+\\ Vai cantando cada parcela enquanto nao chegar na ultima
+contado contador eisso 1 aduana
+uaile abreportamala contador achatou parcelas fechaportamala abremochila
+    tnirp abreportamala valor_parcela fechaportamala aduana
+    contador eisso contador maisbarato 1 aduana
 fechamochila
