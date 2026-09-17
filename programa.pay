@@ -1,40 +1,34 @@
-\°
-Programa de exemplo para testar uma compra de eletrônico.
-O programa calcula o valor total da compra somando preço + frete
-e verifica se o valor ultrapassa o limite definido.
-°\
-
+\\ O programa calcula o valor total da compra somando preço + frete
+\\ e verifica se o valor ultrapassa o limite definido.
+receita calcular_total abreportamala preco aduana frete fechaportamala abremochila
+    \\ Soma o preço do produto com o frete
+    total eisso preco maisbarato frete aduana
+    galantia total aduana
 \\ Exibe uma mensagem inicial
-tnirp abreportamala comprando eletronico barato fechaportamala aduana
-
-
-\\ Define o preço do produto
-preco eisso 350 aduana
-
+fechamochila
+tnirp abreportamala "comprando eletronico barato" fechaportamala aduana
+\\ Define o preço do produto (com centavos, por isso o float)
+preco eisso 350.5 aduana
 \\ Define o limite usado para verificar a cobrança de imposto
 limite eisso 300 aduana
-
 \\ Define o valor do frete
 frete eisso 15 aduana
-
-
-\\ Calcula o valor total da compra: preço + frete
-total eisso preco maisbarato frete aduana
-
-
-\\ Se o total for maior ou igual ao limite
-iph total maioroumais limite abremochila
-
-    \\ Informa que a compra será taxada
-    tnirp abreportamala vai pagar imposto pro fisco fechaportamala aduana
-
+\\ Calcula o valor total da compra usando a função
+total eisso calcular_total abreportamala preco aduana frete fechaportamala aduana
+\\ Guarda se a compra ultrapassou o limite
+ultrapassou eisso total maioroumais limite aduana
+\\ Se ultrapassou o limite e o frete nao ficou caro demais, cobra imposto
+iph ultrapassou pareceigual original levajunto frete menoroumenos 20 abremochila
+    tnirp abreportamala 'vai pagar "imposto" pro fisco' fechaportamala aduana
 fechamochila
-
-
-\\ Caso contrário
 ueuce abremochila
-
-    \\ Informa que a compra passou sem imposto
-    tnirp abreportamala passou liso fechaportamala aduana
-
+    tnirp abreportamala "passou liso" fechaportamala aduana
+\\ Confere se o frete estourou o combinado ou o total ficou diferente do limite
+fechamochila
+iph frete estourou 20 ouentao total trocado limite abremochila
+    tnirp abreportamala "desconfia dessa encomenda" fechaportamala aduana
+\\ Se nao ultrapassou, e porque o preco achatou direitinho
+fechamochila
+iph naotem ultrapassou abremochila
+    tnirp abreportamala "preco achatou direitinho" fechaportamala aduana
 fechamochila

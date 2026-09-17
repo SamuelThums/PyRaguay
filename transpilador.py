@@ -14,6 +14,12 @@ PALAVRAS = {
     "while": "uaile",
     "return": "galantia",
     "print": "tnirp",
+    "def": "receita",
+    "True": "original",
+    "False": "oliginal",
+    "and": "levajunto",
+    "or": "ouentao",
+    "not": "naotem",
 }
 
 OPERADORES = {
@@ -23,6 +29,9 @@ OPERADORES = {
     "/": "divideai",
     "=": "eisso",
     "==": "pareceigual",
+    "!=": "trocado",
+    "<": "achatou",
+    ">": "estourou",
     "<=": "menoroumenos",
     ">=": "maioroumais",
     "(": "abreportamala",
@@ -37,17 +46,9 @@ def converter_string(texto):
     if not isinstance(valor, str):
         raise ValueError("Somente strings de texto sao suportadas")
 
-    palavras = valor.split()
-    invalidas = [
-        palavra for palavra in palavras
-        if re.fullmatch(r"[a-zA-Z][a-zA-Z0-9]*", palavra) is None
-    ]
-    if invalidas:
-        raise ValueError(
-            "A linguagem PAY nao aceita este texto em strings: "
-            + ", ".join(invalidas)
-        )
-    return palavras
+    # A linguagem PAY aceita o literal como foi escrito (aspas simples,
+    # duplas, com aspas do outro tipo por dentro), mantendo as aspas originais.
+    return texto
 
 
 def transpilar(codigo_python):
@@ -89,11 +90,11 @@ def transpilar(codigo_python):
         elif tipo == tokenize.NAME:
             linha_atual.append(PALAVRAS.get(texto, texto))
         elif tipo == tokenize.NUMBER:
-            if not texto.isdigit():
+            if not re.fullmatch(r"\d+(\.\d+)?", texto):
                 raise ValueError(f"Numero nao suportado pela linguagem PAY: {texto}")
             linha_atual.append(texto)
         elif tipo == tokenize.STRING:
-            linha_atual.extend(converter_string(texto))
+            linha_atual.append(converter_string(texto))
         elif tipo == tokenize.OP:
             if texto not in OPERADORES:
                 raise ValueError(f"Operador Python sem equivalente em PAY: {texto}")
