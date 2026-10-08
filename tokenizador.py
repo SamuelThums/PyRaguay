@@ -140,11 +140,14 @@ def tokenize(codigo):
     return resultado
 
 
-# Lendo o código-fonte de um arquivo .pay
-with open("programa.pay", "r", encoding="utf-8") as arquivo:
-    codigo_fonte = arquivo.read()
+# Só executa quando este arquivo é rodado direto, e não quando o
+# analisador sintático importa a função tokenize.
+if __name__ == "__main__":
+    # Lendo o código-fonte de um arquivo .pay
+    with open("programa.pay", "r", encoding="utf-8") as arquivo:
+        codigo_fonte = arquivo.read()
 
-lista = tokenize(codigo_fonte)
+    lista = tokenize(codigo_fonte)
 
-for tipo, lexema, linha, coluna in lista:
-    print(f"{tipo} -> {lexema}  (linha {linha}, coluna {coluna})")
+    for tipo, lexema, linha, coluna in lista:
+        print(f"{tipo} -> {lexema}  (linha {linha}, coluna {coluna})")
