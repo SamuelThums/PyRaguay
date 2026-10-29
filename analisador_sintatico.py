@@ -39,6 +39,9 @@ from tokenizador import tokenize
 #
 # Cada nó da árvore é uma lista: o primeiro item é o nome do nó e os outros
 # são os filhos. Exemplo:  ["maisbarato", "preco", "frete"]
+#
+# Toda instrução guarda, como último filho, o número da linha onde começa.
+# Exemplo:  ["declaracao", "contado", "frete", "15", 26]
 
 COMPARADORES = ["pareceigual", "trocado", "achatou", "estourou", "menoroumenos", "maioroumais"]
 
@@ -62,6 +65,10 @@ def lexema_atual():
 
 def lexema_seguinte():
     return tokens[1][1]
+
+
+def linha_atual():
+    return tokens[0][2]
 
 
 def avanca():
@@ -102,29 +109,35 @@ def programa():
 
 
 def instrucao():
+    # Guarda a linha onde a instrução começa. Ela vai no fim do nó e é usada
+    # pelo analisador semântico nas mensagens de erro.
+    linha = linha_atual()
+
     if lexema_atual() == "receita":
-        return receita()
-    if tipo_atual() == "TIPO":
-        return declaracao()
-    if lexema_atual() == "iph":
-        return iph()
-    if lexema_atual() == "uaile":
-        return uaile()
-    if lexema_atual() == "galantia":
-        return galantia()
-    if lexema_atual() == "tnirp":
-        return tnirp()
+        no = receita()
+    elif tipo_atual() == "TIPO":
+        no = declaracao()
+    elif lexema_atual() == "iph":
+        no = iph()
+    elif lexema_atual() == "uaile":
+        no = uaile()
+    elif lexema_atual() == "galantia":
+        no = galantia()
+    elif lexema_atual() == "tnirp":
+        no = tnirp()
 
     # Um identificador pode começar uma atribuição ou uma chamada.
     # Quem decide é o token que vem depois dele.
-    if tipo_atual() == "IDENTIFICADOR" and lexema_seguinte() == "eisso":
-        return atribuicao()
-    if tipo_atual() == "IDENTIFICADOR" and lexema_seguinte() == "abreportamala":
+    elif tipo_atual() == "IDENTIFICADOR" and lexema_seguinte() == "eisso":
+        no = atribuicao()
+    elif tipo_atual() == "IDENTIFICADOR" and lexema_seguinte() == "abreportamala":
         no = chamada()
         consome_palavra("aduana")
-        return no
+    else:
+        erro("uma instrucao")
 
-    erro("uma instrucao")
+    no.append(linha)
+    return no
 
 
 def receita():
@@ -321,6 +334,8 @@ def imprimir_arvore(no, nivel=0):
         print(recuo + no[0])
         for filho in no[1:]:
             imprimir_arvore(filho, nivel + 1)
+    elif isinstance(no, int):
+        print(recuo + f"(linha {no})")
     else:
         print(recuo + no)
 
