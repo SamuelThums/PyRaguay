@@ -24,6 +24,11 @@ from analisador_sintatico import analisar, ErroSintatico, COMPARADORES
 #   - divideai sempre dá quebrado, como o / do Python
 #   - o tipo "erro" é usado quando algo já deu errado. Ele combina com
 #     qualquer tipo, para o mesmo problema não ser avisado várias vezes.
+#
+# Padrão dos comentários de cada função (###):
+#   primeiro o que ela faz, depois um exemplo curto de entrada e saída.
+#   Nos exemplos, "erro: ..." é a mensagem que vai para a lista de erros
+#   (sem o começo "FISCAL DA RECEITA (linha N):").
 
 NUMERICOS = ["contado", "quebrado"]
 ARITMETICOS = ["maisbarato", "sumiu", "dobradinha", "divideai"]
@@ -45,16 +50,26 @@ receita_atual = None
 
 # ---------- tabela de símbolos ----------
 
+### Abre um escopo novo (vazio) no topo da pilha.
+###   Entra: escopos = [{global}]
+###   Sai:   escopos = [{global}, {}]
 def abre_escopo():
     escopos.append({})
 
 
+### Fecha o escopo atual: tudo o que foi declarado nele deixa de existir.
+###   Entra: escopos = [{global}, {"x": ...}]
+###   Sai:   escopos = [{global}]
 def fecha_escopo():
     escopos.pop()
 
 
+### Guarda um nome no escopo atual (escopos[-1]). Só confere se o nome já
+### existe NESTE escopo; o tipo do valor é conferido antes, em visita_declaracao.
+###   Entra: contado x eisso 1 aduana
+###          contado x eisso 2 aduana
+###   Sai:   erro: 'x' ja foi declarado neste escopo (na linha 1)
 def declara(nome, simbolo):
-    """Coloca o símbolo no escopo atual, se o nome ainda não existir nele."""
     if nome in escopos[-1]:
         anterior = escopos[-1][nome]["linha"]
         erro(f"'{nome}' ja foi declarado neste escopo (na linha {anterior})")
@@ -62,8 +77,13 @@ def declara(nome, simbolo):
     escopos[-1][nome] = simbolo
 
 
+### Procura um nome do escopo mais interno até o global e devolve o símbolo,
+### ou None se ele não existir em nenhum.
+###   Entra: "preco"  (depois de "quebrado preco eisso 350.5 aduana" na linha 22)
+###   Sai:   {"categoria": "variavel", "tipo": "quebrado", "linha": 22}
+###   Entra: "nada"
+###   Sai:   None
 def busca(nome):
-    """Procura o nome do escopo mais interno até o global."""
     for escopo in reversed(escopos):
         if nome in escopo:
             return escopo[nome]
@@ -72,12 +92,21 @@ def busca(nome):
 
 # ---------- funções de apoio ----------
 
+### Adiciona uma mensagem na lista de erros, com a linha atual na frente.
+### Não para a análise: a travessia continua para achar os próximos erros.
+###   Entra: erro("teste")  com linha = 3
+###   Sai:   erros = ["FISCAL DA RECEITA (linha 3): teste"]
 def erro(mensagem):
     erros.append(f"FISCAL DA RECEITA (linha {linha}): {mensagem}")
 
 
+### Diz se um valor do tipo recebido pode ser usado onde se espera o outro.
+### Tipos iguais cabem; contado cabe em quebrado, mas não o contrário. Se um
+### lado é "erro", o problema já foi avisado, então aceita para não repetir.
+###   Entra: cabe("quebrado", "contado")   Sai: True   (15 vira 15.0)
+###   Entra: cabe("contado", "quebrado")   Sai: False  (perderia os centavos)
+###   Entra: cabe("etiqueta", "erro")      Sai: True
 def cabe(tipo_esperado, tipo_recebido):
-    """Diz se um valor do tipo recebido pode ser usado onde se espera o outro."""
     if "erro" in [tipo_esperado, tipo_recebido]:
         return True
     if tipo_esperado == tipo_recebido:
@@ -85,6 +114,10 @@ def cabe(tipo_esperado, tipo_recebido):
     return tipo_esperado == "quebrado" and tipo_recebido == "contado"
 
 
+### Confere se a condição do iph ou do uaile é do tipo temounao. Confere o
+### tipo, não o valor: "contador achatou parcelas" passa, um número não.
+###   Entra: uaile abreportamala 5 fechaportamala ...
+###   Sai:   erro: a condicao do uaile precisa ser temounao, mas e contado
 def confere_condicao(condicao, comando):
     tipo = tipo_de(condicao)
     if not cabe("temounao", tipo):
@@ -95,6 +128,10 @@ def confere_condicao(condicao, comando):
 # Visitor: cada tipo de nó tem a sua função, e a função visitar escolhe qual
 # chamar pelo nome do nó (o primeiro item da lista).
 
+### Escolhe a função certa para o nó pelo nome dele (o primeiro item), usando
+### a tabela VISITANTES. Antes guarda a linha do nó para as mensagens de erro.
+###   Entra: ["tnirp", '"oi"', 1]
+###   Sai:   linha = 1 e chama visita_tnirp(["tnirp", '"oi"'])
 def visitar(no):
     global linha
 
@@ -107,19 +144,31 @@ def visitar(no):
     VISITANTES[no[0]](no)
 
 
+### Visita cada instrução do programa principal, em ordem.
+###   Entra: ["programa", ["declaracao", ...], ["tnirp", ...]]
+###   Sai:   visitar(declaracao), depois visitar(tnirp)
 def visita_programa(no):
     for instrucao in no[1:]:
         visitar(instrucao)
 
 
+### Visita as instruções de um bloco dentro de um escopo próprio, que é
+### fechado no fim: o que foi declarado dentro não vale fora.
+###   Entra: iph abreportamala original fechaportamala abremochila
+###              contado x eisso 1 aduana
+###          fechamochila
+###          tnirp abreportamala x fechaportamala aduana
+###   Sai:   erro: 'x' nao foi declarado   (o x só existia dentro do iph)
 def visita_bloco(no):
-    # Cada bloco de iph, ueuce e uaile tem o seu próprio escopo
     abre_escopo()
     for instrucao in no[1:]:
         visitar(instrucao)
     fecha_escopo()
 
 
+### Declaração com tipo: confere se o valor cabe no tipo e guarda o nome.
+###   Entra: quebrado x eisso 15 aduana    Sai: ok (contado cabe em quebrado)
+###   Entra: contado x eisso 1.5 aduana    Sai: erro: 'x' e contado mas recebeu um valor quebrado
 def visita_declaracao(no):
     _, tipo, nome, valor = no
     # O valor é analisado antes de declarar: "contado x eisso x" é erro
@@ -129,6 +178,11 @@ def visita_declaracao(no):
     declara(nome, {"categoria": "variavel", "tipo": tipo, "linha": linha})
 
 
+### Atribuição sem tipo: o nome precisa já existir, ser variável (não
+### receita) e o valor novo precisa caber no tipo dela.
+###   Entra: contado x eisso 1 aduana
+###          x eisso 2.5 aduana
+###   Sai:   erro: 'x' e contado mas recebeu um valor quebrado
 def visita_atribuicao(no):
     _, nome, valor = no
     tipo_valor = tipo_de(valor)
@@ -141,6 +195,11 @@ def visita_atribuicao(no):
         erro(f"'{nome}' e {simbolo['tipo']} mas recebeu um valor {tipo_valor}")
 
 
+### Declara a receita (nome, tipo de retorno e tipos dos parâmetros) e
+### analisa o corpo num escopo novo, onde os parâmetros já existem.
+###   Entra: receita contado soma abreportamala contado a etambem contado b
+###          fechaportamala abremochila galantia a maisbarato b aduana fechamochila
+###   Sai:   na tabela: soma: receita contado (contado, contado)
 def visita_receita(no):
     global receita_atual
     _, tipo_retorno, nome, parametros, corpo = no
@@ -165,6 +224,12 @@ def visita_receita(no):
     fecha_escopo()
 
 
+### Galantia (return): precisa estar dentro de uma receita e devolver o tipo
+### que ela prometeu.
+###   Entra: receita contado f ... galantia 1.5 aduana ...
+###   Sai:   erro: a receita 'f' devolve contado mas o galantia devolve quebrado
+###   Entra: galantia 1 aduana   (fora de receita)
+###   Sai:   erro: galantia so pode ser usado dentro de uma receita
 def visita_galantia(no):
     tipo_valor = tipo_de(no[1]) if len(no) > 1 else "semtroco"
 
@@ -181,6 +246,9 @@ def visita_galantia(no):
         erro(f"a receita '{nome}' devolve {tipo_retorno} mas o galantia devolve {tipo_valor}")
 
 
+### Iph (if): confere a condição e visita o bloco e, se tiver, o do ueuce (else).
+###   Entra: ["iph", "original", ["bloco", ...], ["ueuce", ["bloco", ...]]]
+###   Sai:   confere_condicao("original"), visitar(bloco), visitar(bloco do ueuce)
 def visita_iph(no):
     confere_condicao(no[1], "iph")
     visitar(no[2])
@@ -188,19 +256,28 @@ def visita_iph(no):
         visitar(no[3][1])  # bloco do ueuce
 
 
+### Uaile (while): confere a condição e visita o bloco.
+###   Entra: ["uaile", "original", ["bloco", ...]]
+###   Sai:   confere_condicao("original"), visitar(bloco)
 def visita_uaile(no):
     confere_condicao(no[1], "uaile")
     visitar(no[2])
 
 
+### Tnirp (print): aceita qualquer valor, menos o "nada" de uma receita semtroco.
+###   Entra: tnirp abreportamala oi abreportamala fechaportamala fechaportamala aduana
+###          (oi é semtroco)
+###   Sai:   erro: tnirp recebeu uma receita semtroco, que nao devolve nada
 def visita_tnirp(no):
     tipo = tipo_de(no[1])
     if tipo == "semtroco":
         erro("tnirp recebeu uma receita semtroco, que nao devolve nada")
 
 
+### Chamada solta, como "anunciar(produto);": só confere a chamada.
+###   Entra: oi abreportamala fechaportamala aduana  (oi declarada)
+###   Sai:   ok, o valor devolvido é ignorado
 def visita_chamada(no):
-    # Chamada solta, como "anunciar(produto);". O valor devolvido é ignorado.
     tipo_da_chamada(no)
 
 
@@ -222,6 +299,14 @@ VISITANTES = {
 # A expressão é visitada de baixo para cima (pós-ordem): primeiro descobre o
 # tipo dos filhos, depois confere se o operador aceita esses tipos.
 
+### Descobre o tipo de uma expressão (conta, comparação, lógica, chamada ou
+### folha) e avisa se o operador não aceita os tipos dos dois lados.
+### Nos exemplos, a é contado e b é quebrado.
+###   Entra: ["maisbarato", "a", "1"]     Sai: "contado"
+###   Entra: ["maisbarato", "a", "b"]     Sai: "quebrado"
+###   Entra: ["divideai", "a", "2"]       Sai: "quebrado"  (divisão sempre dá quebrado)
+###   Entra: ["maioroumais", "a", "b"]    Sai: "temounao"
+###   Entra: ["maisbarato", '"a"', "1"]   Sai: "erro" + erro: maisbarato so faz conta com numeros, ...
 def tipo_de(expressao):
     # Folha: um valor ou um nome, guardado como texto
     if isinstance(expressao, str):
@@ -271,6 +356,13 @@ def tipo_de(expressao):
         return "temounao"
 
 
+### Tipo de uma folha (um valor escrito ou um nome). Se for nome, busca na
+### tabela e dá erro se não foi declarado ou se é receita sem chamada.
+###   Entra: '"oi"'   Sai: "etiqueta"
+###   Entra: "15"     Sai: "contado"
+###   Entra: "350.5"  Sai: "quebrado"
+###   Entra: "original" ou "oliginal"   Sai: "temounao"
+###   Entra: "nada"   Sai: "erro" + erro: 'nada' nao foi declarado
 def tipo_da_folha(texto):
     if texto[0] in "\"'":
         return "etiqueta"
@@ -290,6 +382,12 @@ def tipo_da_folha(texto):
     return simbolo["tipo"]
 
 
+### Confere se a receita existe e foi chamada com a quantidade e o tipo certo
+### de argumentos. Devolve o tipo de retorno da receita.
+### Nos exemplos, soma recebe (contado, contado) e devolve contado.
+###   Entra: soma(1, 2)     Sai: "contado"
+###   Entra: soma(1)        Sai: erro: a receita 'soma' espera 2 argumento(s) mas recebeu 1
+###   Entra: soma(1, 2.5)   Sai: erro: o argumento 2 de 'soma' devia ser contado mas e quebrado
 def tipo_da_chamada(no):
     nome, argumentos = no[1], no[2:]
 
@@ -320,8 +418,11 @@ def tipo_da_chamada(no):
 
 # ---------- entrada e saída ----------
 
+### Ponto de entrada: zera o estado (escopos, erros, linha), visita a árvore
+### inteira e devolve a lista de erros (vazia se o programa está certo).
+###   Entra: árvore de "tnirp abreportamala y fechaportamala aduana"
+###   Sai:   ["FISCAL DA RECEITA (linha 1): 'y' nao foi declarado"]
 def analisar_semantica(arvore):
-    """Recebe a árvore sintática e devolve a lista de erros semânticos."""
     global escopos, erros, linha, receita_atual
     escopos = [{}]
     erros = []
@@ -332,8 +433,12 @@ def analisar_semantica(arvore):
     return erros
 
 
+### Mostra a tabela de símbolos do escopo global (variáveis e receitas).
+###   Entra: escopo global com a receita soma (linha 1) e "contado r" (linha 2)
+###   Sai:   Tabela de simbolos (escopo global):
+###            soma: receita contado (contado, contado)  linha 1
+###            r: contado  linha 2
 def imprimir_tabela():
-    """Mostra o que ficou no escopo global depois da análise."""
     print("Tabela de simbolos (escopo global):")
     for nome, simbolo in escopos[0].items():
         if simbolo["categoria"] == "receita":
