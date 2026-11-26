@@ -169,7 +169,7 @@ def testa_programa_pay():
     with open("programa.pay", "r", encoding="utf-8") as arquivo:
         tac = tac_do_codigo(arquivo.read())
     assert "fim" in tac
-    assert "calcular_total(preco, frete):" in tac
+    assert "somar(preco, frete):" in tac
     print("ok   programa.pay gera TAC")
 
 

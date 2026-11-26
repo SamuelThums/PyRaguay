@@ -142,13 +142,11 @@ CASOS = [
 
 # O programa.pay de exemplo, do começo ao fim
 SAIDA_PROGRAMA_PAY = [
-    "eletronico barato",
-    'vai pagar "imposto" pro fisco',
-    "desconfia dessa encomenda",
-    "imposto dobrado, sem nota",
-    "731.0",
-    "116.833336",
-    "116.833336",
+    "120.5",
+    "paga imposto",
+    "1",
+    "2",
+    "3",
 ]
 
 
