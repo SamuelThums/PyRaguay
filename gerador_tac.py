@@ -89,6 +89,56 @@ lista_atual = principal
 contador_temporarios = 0
 contador_rotulos = 0
 
+# ---------- tabela de tipos ----------
+# O TAC em si não mostra tipos, mas a próxima etapa (RISC-V) precisa deles:
+# conta com quebrado usa instruções de float, e o tnirp imprime número,
+# float e texto de jeitos diferentes. Por isso o gerador anota, enquanto
+# trabalha, o tipo de cada nome (variável, parâmetro e temporário).
+#
+# Cada receita tem a sua tabela, e o programa principal tem a dele:
+#
+#     tipos = {"principal": {"preco": "quebrado", "t2": "quebrado", ...},
+#              "calcular_total": {"preco": "quebrado", "t1": "quebrado", ...}}
+#
+# A tabela de cada receita também diz quem mora na pilha dela (variáveis
+# locais) e quem é global. E "assinaturas" guarda o que cada receita
+# recebe e devolve:
+#
+#     assinaturas = {"calcular_total": {"retorno": "quebrado",
+#                                       "parametros": ["quebrado", "quebrado"]}}
+tipos = {"principal": {}}
+assinaturas = {}
+
+# Onde estamos agora: "principal" ou o nome da receita
+escopo_atual = "principal"
+
+
+def registra_tipo(nome, tipo):
+    tipos[escopo_atual][nome] = tipo
+
+
+def tipo_do_valor(valor):
+    """Descobre o tipo de um operando do TAC: valor pronto ou nome."""
+    if valor[0] in "\"'":
+        return "etiqueta"
+    if valor[0].isdigit():
+        return "quebrado" if "." in valor else "contado"
+    # Nome: procura primeiro na receita atual, depois no programa principal
+    if valor in tipos[escopo_atual]:
+        return tipos[escopo_atual][valor]
+    return tipos["principal"][valor]
+
+
+def tipo_do_resultado(operador, esquerda, direita):
+    """Mesmas regras do analisador semântico, agora para os temporários."""
+    if operador in ["+", "-", "*"]:
+        if "quebrado" in [tipo_do_valor(esquerda), tipo_do_valor(direita)]:
+            return "quebrado"
+        return "contado"
+    if operador == "/":
+        return "quebrado"  # divideai sempre dá quebrado
+    return "temounao"      # comparações e operadores lógicos
+
 
 # ---------- funções de apoio ----------
 
@@ -138,6 +188,7 @@ def gera_declaracao(no):
     #                                       x = t1
     _, tipo, nome, valor = no
     resultado = gerar_expressao(valor)
+    registra_tipo(nome, tipo)
     emite("copia", nome, resultado)
 
 
@@ -153,14 +204,23 @@ def gera_receita(no):
     #     soma(a, b):
     #         t1 = a + b
     #         return t1
-    global lista_atual
+    global lista_atual, escopo_atual
     _, tipo_retorno, nome, parametros, corpo = no
     nomes_parametros = [parametro[2] for parametro in parametros[1:]]
 
+    # A assinatura entra antes do corpo, para a receita poder chamar a si mesma
+    assinaturas[nome] = {"retorno": tipo_retorno,
+                         "parametros": [parametro[1] for parametro in parametros[1:]]}
+
     # Tudo que for emitido daqui até o fim da receita vai para a lista de
-    # receitas, e não para o programa principal
+    # receitas, e não para o programa principal. E os tipos vão para a
+    # tabela da receita.
     lista_de_fora = lista_atual
     lista_atual = receitas
+    escopo_atual = nome
+    tipos[nome] = {}
+    for _, tipo, nome_parametro in parametros[1:]:
+        registra_tipo(nome_parametro, tipo)
 
     emite("receita", nome, nomes_parametros)
     gerar(corpo)
@@ -171,6 +231,7 @@ def gera_receita(no):
         emite("return")
 
     lista_atual = lista_de_fora
+    escopo_atual = "principal"
 
 
 def gera_galantia(no):
@@ -274,14 +335,17 @@ def gerar_expressao(expressao):
     if operador == "naotem":
         valor = gerar_expressao(expressao[1])
         temporario = nova_temporaria()
+        registra_tipo(temporario, "temounao")
         emite("not", temporario, valor)
         return temporario
 
     # Operador binário: primeiro os dois filhos (pós-ordem), depois ele
     esquerda = gerar_expressao(expressao[1])
     direita = gerar_expressao(expressao[2])
+    simbolo = OPERADORES[operador]
     temporario = nova_temporaria()
-    emite(OPERADORES[operador], temporario, esquerda, direita)
+    registra_tipo(temporario, tipo_do_resultado(simbolo, esquerda, direita))
+    emite(simbolo, temporario, esquerda, direita)
     return temporario
 
 
@@ -300,6 +364,7 @@ def gerar_chamada(no, guardar_resultado):
 
     if guardar_resultado:
         temporario = nova_temporaria()
+        registra_tipo(temporario, assinaturas[nome]["retorno"])
         emite("call", temporario, nome, len(valores))
         return temporario
 
@@ -317,11 +382,15 @@ def gerar_tac(arvore):
     """
     global principal, receitas, lista_atual
     global contador_temporarios, contador_rotulos
+    global tipos, assinaturas, escopo_atual
     principal = []
     receitas = []
     lista_atual = principal
     contador_temporarios = 0
     contador_rotulos = 0
+    tipos = {"principal": {}}
+    assinaturas = {}
+    escopo_atual = "principal"
 
     gerar(arvore)
     emite("fim")
