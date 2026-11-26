@@ -15,7 +15,9 @@ from analisador_semantico import analisar_semantica
 #
 #     destino = operando1 operador operando2
 #
-# Exemplo:  quebrado d eisso (a maisbarato b) dobradinha c aduana
+# Exemplo, com símbolos no lugar das palavras .pay para caber na linha:
+#
+#     d = (a + b) * c      vira
 #
 #     t1 = a + b
 #     t2 = t1 * c
@@ -179,6 +181,9 @@ def gera_programa(no):
 
 
 def gera_bloco(no):
+    # No TAC o bloco não tem escopo próprio: as instruções de dentro só são
+    # emitidas na sequência. Uma variável declarada dentro de um iph vale
+    # para o resto da receita (ou do programa principal).
     for instrucao in no[1:]:
         gerar(instrucao)
 
@@ -199,7 +204,7 @@ def gera_atribuicao(no):
 
 
 def gera_receita(no):
-    # receita contado soma (contado a etambem contado b) { galantia a maisbarato b; }
+    # Uma receita soma(a, b) que devolve a + b vira:
     #
     #     soma(a, b):
     #         t1 = a + b
@@ -339,7 +344,11 @@ def gerar_expressao(expressao):
         emite("not", temporario, valor)
         return temporario
 
-    # Operador binário: primeiro os dois filhos (pós-ordem), depois ele
+    # Operador binário: primeiro os dois filhos (pós-ordem), depois ele.
+    # Vale também para levajunto e ouentao: os dois lados são sempre
+    # calculados, mesmo quando o primeiro já decide o resultado (o Python
+    # pararia no meio, o chamado curto-circuito). Fica mais simples, e o
+    # resultado só muda se o lado direito chamar uma receita que imprime algo.
     esquerda = gerar_expressao(expressao[1])
     direita = gerar_expressao(expressao[2])
     simbolo = OPERADORES[operador]

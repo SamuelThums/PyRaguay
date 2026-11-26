@@ -22,10 +22,19 @@ from gerador_tac import gerar_tac, formatar
 #       2. faz a operação
 #       3. guarda o resultado de volta na memória
 #
-#   Exemplo:  t1 = a + b    vira    lw  t0, a
-#                                   lw  t1, b
-#                                   add t0, t0, t1
-#                                   sw  t0, t1_na_memoria
+#   Exemplo (com a, b e t1 globais):
+#
+#       t1 = a + b    vira    la  t6, var_a         t6 recebe o endereço de a
+#                             lw  t0, 0(t6)         t0 recebe o valor de a
+#                             la  t6, var_b
+#                             lw  t1, 0(t6)         t1 recebe o valor de b
+#                             add t0, t0, t1        t0 = a + b
+#                             la  t6, var_t1
+#                             sw  t0, 0(t6)         guarda na memória de t1
+#
+#   CUIDADO com os nomes: o t1 do TAC (um temporário, que vira o rótulo
+#   var_t1 na memória) não tem nada a ver com o registrador t1 do RISC-V.
+#   Os nomes são parecidos por coincidência.
 #
 #   É lento (muito acesso à memória), mas é simples e sempre funciona,
 #   porque nenhum valor precisa sobreviver em registrador de uma instrução
@@ -60,6 +69,15 @@ from gerador_tac import gerar_tac, formatar
 #
 # O tipo de cada nome vem da tabela que o gerador de TAC preencheu
 # (gerador_tac.tipos e gerador_tac.assinaturas).
+#
+# LIMITAÇÕES CONHECIDAS
+#
+#   - Comparar duas etiquetas (pareceigual entre textos) não é suportado:
+#     seria preciso comparar letra por letra, e não os endereços.
+#   - Se um bloco declara de novo uma variável que já existe fora dele, as
+#     duas ocupam o mesmo lugar na memória (ver gera_bloco no gerador_tac).
+#   - Uma receita recebe no máximo 8 argumentos inteiros e 8 quebrados
+#     (a0..a7 e fa0..fa7). Mais que isso precisaria passar pela pilha.
 
 
 class ErroGeracao(Exception):
@@ -324,7 +342,8 @@ def traduz_receita(instrucao):
     for posicao, local in enumerate(locais):
         pilha[local] = -(12 + 4 * posicao)
 
-    # A pilha do RISC-V anda de 16 em 16 bytes, então arredonda para cima
+    # A convenção do RISC-V pede que o sp seja sempre múltiplo de 16, então
+    # o tamanho do quadro é arredondado para cima (ex: 20 bytes viram 32)
     tamanho = 8 + 4 * len(locais)
     tamanho = (tamanho + 15) // 16 * 16
 
@@ -352,11 +371,12 @@ def traduz_return(instrucao):
         tipo_retorno = gerador_tac.assinaturas[escopo_atual]["retorno"]
         carrega(instrucao["arg1"], tipo_retorno, "a0", "fa0")
 
-    # Desmonta o quadro e volta para quem chamou
-    escreve("lw ra, -4(s0)")
-    escreve("mv sp, s0")
-    escreve("lw s0, -8(s0)")
-    escreve("ret")
+    # Desmonta o quadro e volta para quem chamou. A ordem importa: o s0 é
+    # usado para achar o ra e o s0 antigo, então ele é o último a mudar.
+    escreve("lw ra, -4(s0)")    # endereço de volta
+    escreve("mv sp, s0")        # sp volta para onde estava antes do quadro
+    escreve("lw s0, -8(s0)")    # s0 volta a ser o de quem chamou
+    escreve("ret")              # pula para o ra
 
 
 def traduz_print(instrucao):
@@ -455,7 +475,9 @@ def gerar_riscv(instrucoes):
 
     for instrucao in instrucoes:
         # Cada trecho começa com a instrução TAC em comentário, para dar
-        # para ver de onde saiu cada pedaço do assembly
+        # para ver de onde saiu cada pedaço do assembly. Rótulos e receitas
+        # já aparecem como rótulos. O param fica sem comentário porque o
+        # código dele só é escrito no call (ver traduz_param).
         if instrucao["op"] not in ["rotulo", "receita", "param"]:
             escreve("# " + formatar(instrucao).strip())
 
